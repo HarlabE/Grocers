@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:grocery_app/models/grocery_item.dart';
 import 'package:http/http.dart' as http;
 import 'package:grocery_app/data/categories.dart';
 import 'package:grocery_app/models/category.dart';
@@ -35,13 +36,11 @@ class _NewItemsState extends State<NewItems> {
           'category': _enteredCategory.foodType,
         }),
       );
-      print(response.body);
-      print(response.statusCode);
-
+    final Map<String,dynamic> resData= json.decode(response.body);
       if (!context.mounted) {
         return;
       }
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(GroceryItem(id: resData['name'], name: _enteredTitle, category: _enteredCategory,quantity: _enteredQuantity));
     }
   }
 
