@@ -19,9 +19,13 @@ class _NewItemsState extends State<NewItems> {
   var _enteredTitle = '';
   var _enteredQuantity = 1;
   var _enteredCategory = categories[Categories.vegetables]!;
+  var _isSending = false;
 
   void _saveItem() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSending = true;
+      });
       _formKey.currentState!.save();
       final url = Uri.https(
         'flutter-prep-d8aac-default-rtdb.firebaseio.com',
@@ -36,11 +40,18 @@ class _NewItemsState extends State<NewItems> {
           'category': _enteredCategory.foodType,
         }),
       );
-    final Map<String,dynamic> resData= json.decode(response.body);
+      final Map<String, dynamic> resData = json.decode(response.body);
       if (!context.mounted) {
         return;
       }
-      Navigator.of(context).pop(GroceryItem(id: resData['name'], name: _enteredTitle, category: _enteredCategory,quantity: _enteredQuantity));
+      Navigator.of(context).pop(
+        GroceryItem(
+          id: resData['name'],
+          name: _enteredTitle,
+          category: _enteredCategory,
+          quantity: _enteredQuantity,
+        ),
+      );
     }
   }
 
@@ -128,20 +139,28 @@ class _NewItemsState extends State<NewItems> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () {
-                      _formKey.currentState!.reset();
-                    },
+                    onPressed: _isSending
+                        ? null
+                        : () {
+                            _formKey.currentState!.reset();
+                          },
                     child: Text('Reset'),
                   ),
                   ElevatedButton(
-                    onPressed: _saveItem,
+                    onPressed: _isSending ? null : _saveItem,
 
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(
                         context,
                       ).scaffoldBackgroundColor,
                     ),
-                    child: Text('Add items'),
+                    child: _isSending
+                        ? SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(),
+                          )
+                        : Text('Add items'),
                   ),
                 ],
               ),

@@ -15,6 +15,8 @@ class GroceryList extends StatefulWidget {
 
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItems = [];
+  var _isloading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -29,6 +31,11 @@ class _GroceryListState extends State<GroceryList> {
     );
     final response = await http.get(url);
     final Map<String, dynamic> listData = jsonDecode(response.body);
+    if (response.statusCode >= 400) {
+      setState(() {
+        _error = 'failed to fetch data, please try again later';
+      });
+    }
     final List<GroceryItem> _loadedItems = [];
     for (final item in listData.entries) {
       final category = categories.entries
@@ -47,6 +54,7 @@ class _GroceryListState extends State<GroceryList> {
     }
     setState(() {
       _groceryItems = _loadedItems;
+      _isloading = false;
     });
   }
 
@@ -74,28 +82,38 @@ class _GroceryListState extends State<GroceryList> {
 
   @override
   Widget build(BuildContext context) {
-    Widget body = _groceryItems.isEmpty
-        ? Center(child: Text('No items yet'))
-        : ListView.builder(
-            itemCount: _groceryItems.length,
-            itemBuilder: (ctx, index) {
-              return Dismissible(
-                onDismissed: (direction) {
-                  _removeItem(_groceryItems[index]);
-                },
-                key: ValueKey(_groceryItems[index].id),
-                child: ListTile(
-                  leading: Container(
-                    width: 30,
-                    height: 30,
-                    color: _groceryItems[index].category.color,
-                  ),
-                  title: Text(_groceryItems[index].name),
-                  trailing: Text(_groceryItems[index].quantity.toString()),
-                ),
-              );
+    Widget body = Center(child: Text('No items yet'));
+
+    if (_isloading) {
+      body = Center(child: CircularProgressIndicator());
+    }
+
+    if (_groceryItems.isNotEmpty) {
+      body = ListView.builder(
+        itemCount: _groceryItems.length,
+        itemBuilder: (ctx, index) {
+          return Dismissible(
+            onDismissed: (direction) {
+              _removeItem(_groceryItems[index]);
             },
+            key: ValueKey(_groceryItems[index].id),
+            child: ListTile(
+              leading: Container(
+                width: 30,
+                height: 30,
+                color: _groceryItems[index].category.color,
+              ),
+              title: Text(_groceryItems[index].name),
+              trailing: Text(_groceryItems[index].quantity.toString()),
+            ),
           );
+        },
+      );
+      if (_error != null) {
+        body = Center(child: Text(_error!));
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Your Groceries'),
